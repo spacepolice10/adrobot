@@ -7,5 +7,5 @@
 @import url("forms.css?v=4") layer(components);
 @import url("pressable.css") layer(components);
 @import url("icons.css") layer(components);
-@import url("campaign-offers.css?v=4") layer(components);
+@import url("campaign-offers.css?v=5") layer(components);
 @import url("switchable.css") layer(components);

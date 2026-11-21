@@ -34,6 +34,7 @@ from adrobot.templates import render
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Campaigns"], dependencies=[Depends(require_same_origin)])
+SYNC_FLASH_COOKIE = "adrobot_offer_sync"
 
 
 @router.get("/campaigns/new", name="new_campaign", include_in_schema=False)
@@ -96,6 +97,7 @@ def render_campaign_detail(
     campaign: CampaignSummary | None = None,
     draft_enabled: bool = False,
     sync_pending: bool = False,
+    show_sync_notice: bool = False,
     message: str = "",
     status_code: int = 200,
 ) -> HTMLResponse:
@@ -115,6 +117,7 @@ def render_campaign_detail(
         show_form=status_code == 200,
         draft_enabled=draft_enabled,
         sync_pending=sync_pending,
+        show_sync_notice=show_sync_notice,
         streams=visible_streams,
         offer_names=offer_names,
         offer_stream_ids=offer_stream_ids,
@@ -130,10 +133,24 @@ def render_campaign_detail(
     "/campaigns/{campaign_id:int}", name="show_campaign", include_in_schema=False
 )
 def show(
+    request: Request,
     campaign_id: Annotated[int, Path(gt=0)],
     keitaro: KeitaroDependency,
     db: DatabaseSession,
-    synced: bool = False,
+) -> HTMLResponse:
+    show_sync_notice = request.cookies.get(SYNC_FLASH_COOKIE) == str(campaign_id)
+    response = _campaign_page(campaign_id, keitaro, db, show_sync_notice)
+    response.headers["Cache-Control"] = "private, no-store"
+    if show_sync_notice:
+        response.delete_cookie(SYNC_FLASH_COOKIE, path=request.url.path)
+    return response
+
+
+def _campaign_page(
+    campaign_id: int,
+    keitaro: KeitaroDependency,
+    db: DatabaseSession,
+    show_sync_notice: bool,
 ) -> HTMLResponse:
     title = f"Кампания #{campaign_id}"
     try:
@@ -156,7 +173,7 @@ def show(
                 campaign=campaign,
                 draft_enabled=True,
                 sync_pending=snapshot.has_pending_changes,
-                message="Офферы синхронизированы с Keitaro." if synced else "",
+                show_sync_notice=show_sync_notice,
             )
     except (SQLAlchemyError, ValidationError) as exc:
         logger.warning(
@@ -193,6 +210,7 @@ def show(
         streams,
         offer_names or {},
         campaign=campaign,
+        show_sync_notice=show_sync_notice,
         draft_enabled=draft_enabled,
         message=message,
     )

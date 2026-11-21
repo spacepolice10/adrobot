@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse, Response
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
-from adrobot.controllers.campaigns import render_campaign_detail
+from adrobot.controllers.campaigns import SYNC_FLASH_COOKIE, render_campaign_detail
 from adrobot.controllers.form_requests import read_form, require_same_origin
 from adrobot.db import DatabaseSession
 from adrobot.diagnostics import request_id
@@ -75,5 +75,16 @@ async def update_draft(
         return render_campaign_detail(
             f"Кампания #{campaign_id}", [], {}, message=message, status_code=status
         )
-    suffix = "?synced=true" if form.action == "sync" else ""
-    return RedirectResponse(f"/campaigns/{campaign_id}{suffix}", status_code=303)
+    path = request.url_for("show_campaign", campaign_id=campaign_id).path
+    response = RedirectResponse(path, status_code=303)
+    if form.action == "sync":
+        response.set_cookie(
+            SYNC_FLASH_COOKIE,
+            str(campaign_id),
+            path=path,
+            max_age=60,
+            httponly=True,
+            secure=request.url.scheme == "https",
+            samesite="lax",
+        )
+    return response

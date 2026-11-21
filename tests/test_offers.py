@@ -190,6 +190,8 @@ def test_sync_publishes_only_active_offers_and_keeps_draft(tmp_path, outcome):
                 remote.append({"offer_id": 8, "share": 10, "state": "active"})
             result = client.post(path, data={"action": "sync"})
             if outcome != "success":
+                assert "Офферы синхронизированы" not in result.text
+                assert "set-cookie" not in result.headers
                 assert (
                     client.get("/campaigns/42").text.count("campaign-offer--pending")
                     == 1
@@ -204,7 +206,14 @@ def test_sync_publishes_only_active_offers_and_keeps_draft(tmp_path, outcome):
                 assert len(remote) == 1
             else:
                 assert result.status_code == 200
+                assert result.history[0].headers["location"] == "/campaigns/42"
                 assert "Офферы синхронизированы" in result.text
+                assert "В потоках пока нет офферов." in result.text
+                assert "Офферы синхронизированы" not in client.get("/campaigns/42").text
+                assert (
+                    "Офферы синхронизированы"
+                    not in client.get("/campaigns/42?synced=true").text
+                )
                 assert 'class="campaign-sync"' not in result.text
                 assert "Test offer" not in result.text
                 assert remote == [] and writes == [{"offers": []}]

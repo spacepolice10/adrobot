@@ -2,6 +2,10 @@
 {% block content %}
 <main data-size="lg">
   <h1 class="campaign-title">{{ title }}</h1>
+  {% if show_sync_notice %}
+  <p class="campaign-flash" role="status">Офферы синхронизированы с Keitaro.</p>
+  <script defer src="/static/js/campaign-flash.js"></script>
+  {% endif %}
   <div class="campaign-actions" role="group" aria-label="Действия кампании">
     <a class="pressable pressable--action" href="/campaigns">
       <span class="pressable__content">

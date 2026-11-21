@@ -6,6 +6,14 @@ main:has(> .campaign-title) {
   font-size: max(1.5rem, var(--font-size-xl));
 }
 
+.campaign-flash {
+  padding-block: var(--space-v);
+  padding-inline: var(--space-h);
+  border-inline-start: 3px solid var(--color-invert-positive);
+  background: color-mix(in oklch, var(--color-positive) 32%, var(--color-1));
+  color: var(--color-invert-positive);
+}
+
 .campaign-actions {
   display: flex;
   flex-wrap: wrap;
