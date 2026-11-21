@@ -1,0 +1,47 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+
+mock_port=${ADROBOT_MOCK_PORT:-8010}
+app_port=${ADROBOT_DEMO_PORT:-8001}
+export KEITARO_URL="http://127.0.0.1:$mock_port"
+export KEITARO_API_KEY=adrobot-demo
+export KEITARO_CAMPAIGN_DOMAIN_ID=1813
+
+python=$(mise exec -- uv run python -c 'import sys; print(sys.executable)')
+demo_db_dir=$(mktemp -d)
+export DATABASE_URL="sqlite:///$demo_db_dir/adrobot-demo.db"
+mock_pid=
+
+cleanup() {
+    if [ -n "$mock_pid" ]; then
+        kill "$mock_pid" 2>/dev/null || true
+        wait "$mock_pid" 2>/dev/null || true
+    fi
+    rm -rf -- "$demo_db_dir"
+}
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+"$python" -m alembic upgrade head
+"$python" -m uvicorn adrobot.mock_keitaro:app --host 127.0.0.1 --port "$mock_port" \
+    --no-use-colors >"$demo_db_dir/mock.log" 2>&1 &
+mock_pid=$!
+
+attempt=0
+while :; do
+    if ! kill -0 "$mock_pid" 2>/dev/null || [ "$attempt" -ge 10 ]; then
+        echo "Could not start the demo Keitaro mock on port $mock_port." >&2
+        cat "$demo_db_dir/mock.log" >&2
+        exit 1
+    fi
+    if grep -q 'Uvicorn running on' "$demo_db_dir/mock.log"; then
+        break
+    fi
+    attempt=$((attempt + 1))
+    sleep 1
+done
+
+"$python" -m uvicorn adrobot.main:app --host 127.0.0.1 --port "$app_port" --reload

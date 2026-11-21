@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+
+if [ ! -f .env ]; then
+    echo "Create .env from .env.example and configure the live Keitaro connection." >&2
+    exit 1
+fi
+
+if [ -z "${DATABASE_URL:-}" ]; then
+    docker compose up -d --wait postgres
+    export DATABASE_URL=postgresql+psycopg://adrobot:adrobot@127.0.0.1:5433/adrobot
+fi
+
+unset KEITARO_URL KEITARO_API_KEY KEITARO_CAMPAIGN_DOMAIN_ID KEITARO_CAMPAIGN_DOMAIN
+mise exec -- uv run alembic upgrade head
+exec mise exec -- uv run uvicorn adrobot.main:app --host 127.0.0.1 --port 8000 --reload --env-file .env
