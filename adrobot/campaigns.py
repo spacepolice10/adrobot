@@ -11,7 +11,7 @@ from adrobot.keitaro import (
     KeitaroClient,
     KeitaroConfigurationError,
     KeitaroError,
-    configured_client,
+    open_keitaro_client,
 )
 
 router = APIRouter(tags=["Campaigns"])
@@ -34,7 +34,7 @@ class CampaignCreated(BaseModel):
 
 def get_keitaro_client() -> Iterator[KeitaroClient]:
     try:
-        with configured_client() as client:
+        with open_keitaro_client() as client:
             yield client
     except KeitaroConfigurationError as exc:
         raise HTTPException(503, str(exc)) from exc
