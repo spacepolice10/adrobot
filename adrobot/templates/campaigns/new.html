@@ -1,0 +1,39 @@
+{% extends "layouts/application.html" %}
+{% block content %}
+<script defer src="/static/js/offer-picker.js"></script>
+<script defer src="/static/js/country-picker.js"></script>
+<script defer src="/static/js/search-suggestions.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.4/dist/cdn.min.js"></script>
+<main data-size="sm">
+  <h1>Создание кампании</h1>
+  <form method="post" action="/campaigns"
+        x-data="{ ...countryPicker(), ...offerPicker() }">
+    <div class="form-field">
+      <label for="campaign-name">Название кампании</label>
+      <input id="campaign-name" name="name" type="text" required>
+    </div>
+    <div class="form-field" @keydown.arrow-down="moveSuggestionFocus($event, 1)"
+         @keydown.arrow-up="moveSuggestionFocus($event, -1)">
+      <label for="country-query">Страна</label>
+      <input id="country-query" x-ref="countryQuery" type="search" autocomplete="off"
+             aria-describedby="country-status" placeholder="Австралия или AU" required
+             :value="countryQuery" @input="setCountryQuery($event.target.value)">
+      <p id="country-status" role="status"
+         x-text="countryQuery.trim() && !countryCode && !countryMatches.length ? 'Страны не найдены.' : ''"></p>
+      <template x-if="countryMatches.length">
+        <ul class="form-suggestions" role="list" aria-label="Найденные страны">
+          <template x-for="country in countryMatches" :key="country.code">
+            <li>
+              <button class="pressable" type="button" @click="selectCountry(country); $refs.countryQuery.focus()"
+                      x-text="country.label"></button>
+            </li>
+          </template>
+        </ul>
+      </template>
+      <input type="hidden" name="country_code" :value="countryCode">
+    </div>
+    {% include "offers/picker.html" %}
+    <button class="pressable" type="submit" disabled :disabled="!countryCode || !selectedOffer">Создать</button>
+  </form>
+</main>
+{% endblock %}

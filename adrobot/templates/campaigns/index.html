@@ -1,0 +1,22 @@
+{% extends "layouts/application.html" %}
+{% block content %}
+<main>
+  <h1>Кампании</h1>
+  <a class="pressable" href="/campaigns/new">Создать кампанию</a>
+  <p id="campaign-list-status" role="status">{{ message }}</p>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Название</th>
+        <th scope="col">Статус</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for campaign in campaigns %}
+      <tr><td>{{ campaign.id }}</td><td><a href="/campaigns/{{ campaign.id }}">{{ campaign.name }}</a></td><td>{{ campaign.state }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</main>
+{% endblock %}

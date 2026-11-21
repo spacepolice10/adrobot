@@ -1,0 +1,16 @@
+{% extends "layouts/application.html" %}
+{% block content %}
+<main data-size="sm">
+  <h1>Удалить кампанию?</h1>
+  <p>Кампания «{{ campaign.name }}» (#{{ campaign.id }}) будет перемещена в архив Keitaro.</p>
+  <form method="post" action="/campaigns/{{ campaign.id }}/archive">
+    <button class="pressable pressable--action pressable--destructive" type="submit">
+      <span class="pressable__content">
+        <span class="icon icon--trash" aria-hidden="true"></span>
+        <span>Переместить в архив</span>
+      </span>
+    </button>
+    <a class="pressable pressable--action" href="/campaigns/{{ campaign.id }}">Отмена</a>
+  </form>
+</main>
+{% endblock %}

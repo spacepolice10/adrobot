@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>Adrobot</title>
+  <link rel="stylesheet" href="/static/css/application.css?v=6">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.4/dist/cdn.min.js"></script>
 </head>
 <body>
@@ -24,9 +26,10 @@
     }
   }">
     <h1>Adrobot</h1>
-    <button type="button" x-on:click="check()" x-bind:disabled="checking">Check status</button>
+    <button class="pressable" type="button" x-on:click="check()" x-bind:disabled="checking">Check status</button>
     <p role="status" x-text="status">The status check requires Alpine.js.</p>
-    <a href="/docs">API documentation</a>
+    <a class="pressable" href="/campaigns">Кампании</a>
+    <a class="pressable" href="/docs">API documentation</a>
   </main>
 </body>
 </html>

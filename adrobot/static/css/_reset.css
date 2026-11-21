@@ -1,0 +1,51 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: light dark;
+  interpolate-size: allow-keywords;
+  scrollbar-gutter: stable;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-block-size: 100svb;
+}
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-inline-size: 100%;
+  block-size: auto;
+}
+
+ul[role="list"], ol[role="list"] {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+input, select, textarea {
+  font-size: max(16px, 1rem);
+  max-inline-size: 100%;
+}
+
+textarea {
+  resize: vertical;
+}
+
+:target {
+  scroll-margin-block: 5ex;
+}
+
+[hidden]:not([hidden="until-found"]) {
+  display: none !important;
+}

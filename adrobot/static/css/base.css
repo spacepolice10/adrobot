@@ -1,0 +1,56 @@
+body {
+  background-color: var(--color-1);
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 2rem 2rem;
+  color: var(--color-invert-1);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-base-read);
+  line-height: var(--line-height-paragraph);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-heading);
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+h1 {
+  margin-block-start: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-strong);
+}
+
+p, li {
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+
+:where(input:not([type]), input[type="text"], input[type="search"]) {
+  padding-block: var(--space-v-half);
+  padding-inline: var(--space-h-half);
+  background-color: var(--color-1);
+  color: inherit;
+  border: var(--border-strong);
+  border-radius: var(--radius-base);
+}
+
+table {
+  border-collapse: collapse;
+  background-color: var(--color-2);
+}
+
+th, td {
+  padding-block: var(--space-v-half);
+  padding-inline: var(--space-h-half);
+  border-block-end: var(--border-subtle);
+  text-align: start;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

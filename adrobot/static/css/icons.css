@@ -1,0 +1,44 @@
+:root {
+  --icon-arrow-left: url("../icons/phosphor/arrow-left.svg");
+  --icon-trash: url("../icons/phosphor/trash.svg");
+  --icon-push-pin: url("../icons/phosphor/push-pin.svg");
+  --icon-push-pin-slash: url("../icons/phosphor/push-pin-slash.svg");
+  --icon-plus: url("../icons/phosphor/plus.svg");
+  --icon-arrow-counter-clockwise: url("../icons/phosphor/arrow-counter-clockwise.svg");
+}
+
+.icon {
+  --icon-mask: none;
+
+  display: block;
+  flex: none;
+  inline-size: 1.125em;
+  block-size: 1.125em;
+  background-color: currentColor;
+  -webkit-mask: var(--icon-mask) center / contain no-repeat;
+  mask: var(--icon-mask) center / contain no-repeat;
+}
+
+.icon--arrow-left {
+  --icon-mask: var(--icon-arrow-left);
+}
+
+.icon--trash {
+  --icon-mask: var(--icon-trash);
+}
+
+.icon--plus {
+  --icon-mask: var(--icon-plus);
+}
+
+.icon--arrow-counter-clockwise {
+  --icon-mask: var(--icon-arrow-counter-clockwise);
+}
+
+.icon--push-pin {
+  --icon-mask: var(--icon-push-pin);
+}
+
+.icon--push-pin-slash {
+  --icon-mask: var(--icon-push-pin-slash);
+}

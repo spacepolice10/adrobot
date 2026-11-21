@@ -1,0 +1,50 @@
+:where(main, form)[data-size="sm"] {
+  --container-size: 32rem;
+}
+
+:where(main, form)[data-size="md"] {
+  --container-size: 48rem;
+}
+
+:where(main, form)[data-size="lg"] {
+  --container-size: 64rem;
+}
+
+body > main {
+  --gutter: var(--space-h);
+  --content: var(--container-size, 48rem);
+  --breakout: 64rem;
+
+  display: grid;
+  grid-template-columns:
+    [full-width-start] minmax(var(--gutter), 1fr)
+    [breakout-start] minmax(0, calc((var(--breakout) - var(--content)) / 2))
+    [content-start] min(var(--content), 100% - 2 * var(--gutter)) [content-end]
+    minmax(0, calc((var(--breakout) - var(--content)) / 2))
+    [breakout-end] minmax(var(--gutter), 1fr) [full-width-end];
+  row-gap: var(--space-v-2);
+  padding-block: var(--space-v-4);
+}
+
+body > main > * {
+  grid-column: content;
+  margin-block: 0;
+}
+
+body > main > .pressable {
+  justify-self: start;
+}
+
+body > main > .breakout {
+  grid-column: breakout;
+}
+
+body > main > .full-width {
+  grid-column: full-width;
+}
+
+form[data-size] {
+  inline-size: 100%;
+  max-inline-size: var(--container-size, 100%);
+  margin-inline: auto;
+}

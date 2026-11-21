@@ -1,57 +1,61 @@
-import os
-from collections.abc import AsyncIterator, Iterator
-from contextlib import asynccontextmanager
-from pathlib import Path
-from typing import Annotated
+from collections.abc import AsyncIterator
+from contextlib import ExitStack, asynccontextmanager
+from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
-from sqlalchemy import create_engine, text
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from fastapi import FastAPI, Request, Response
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import RequestResponseEndpoint
 
-from adrobot.campaigns import router as campaigns_router
-
-INDEX = Path(__file__).parent / "static" / "index.html"
-
-
-class Health(BaseModel):
-    status: str
-
-
-def get_session(request: Request) -> Iterator[Session]:
-    with Session(request.app.state.engine) as session:
-        yield session
+from adrobot import STATIC_DIR
+from adrobot.controllers.application import router as application_router
+from adrobot.controllers.campaigns import router as campaigns_router
+from adrobot.controllers.offers import router as offers_router
+from adrobot.db import create_database_engine
+from adrobot.diagnostics import request_id
+from adrobot.keitaro import KeitaroConfigurationError, open_keitaro_client
+from adrobot.settings import Settings
 
 
 def create_app(database_url: str | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        engine = create_engine(
-            database_url or os.environ.get("DATABASE_URL", "sqlite:///adrobot.db"),
-            pool_pre_ping=True,
-        )
-        app.state.engine = engine
-        try:
+        settings = Settings(database_url=database_url) if database_url else Settings()
+        app.state.settings = settings
+        with ExitStack() as stack:
+            engine = create_database_engine(settings.database_url)
+            stack.callback(engine.dispose)
+            app.state.engine = engine
+            try:
+                app.state.keitaro_client = stack.enter_context(
+                    open_keitaro_client(settings)
+                )
+            except KeitaroConfigurationError:
+                app.state.keitaro_client = None
             yield
-        finally:
-            engine.dispose()
 
     app = FastAPI(title="Adrobot", lifespan=lifespan)
-    app.include_router(campaigns_router)
 
-    @app.get("/", include_in_schema=False)
-    def home() -> FileResponse:
-        return FileResponse(INDEX, media_type="text/html")
-
-    @app.get("/api/health", responses={503: {"description": "Database unavailable"}})
-    def health(session: Annotated[Session, Depends(get_session)]) -> Health:
+    @app.middleware("http")
+    async def identify_request(
+        request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        identifier = uuid4().hex
+        token = request_id.set(identifier)
         try:
-            session.execute(text("SELECT 1"))
-        except SQLAlchemyError as exc:
-            raise HTTPException(503, "Database unavailable") from exc
-        return Health(status="ok")
+            response = await call_next(request)
+            response.headers["X-Request-ID"] = identifier
+            return response
+        finally:
+            request_id.reset(token)
+
+    app.mount("/static/css", StaticFiles(directory=STATIC_DIR / "css"), name="css")
+    app.mount(
+        "/static/icons", StaticFiles(directory=STATIC_DIR / "icons"), name="icons"
+    )
+    app.mount("/static/js", StaticFiles(directory=STATIC_DIR / "js"), name="js")
+    app.include_router(campaigns_router)
+    app.include_router(offers_router)
+    app.include_router(application_router)
 
     return app
 

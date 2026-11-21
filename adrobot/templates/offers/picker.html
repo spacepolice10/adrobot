@@ -1,0 +1,21 @@
+<div class="form-field" @keydown.arrow-down="moveSuggestionFocus($event, 1)"
+     @keydown.arrow-up="moveSuggestionFocus($event, -1)">
+  <label for="offer-query">Оффер</label>
+  <input id="offer-query" x-ref="offerQuery" type="search" autocomplete="off" required maxlength="200"
+         placeholder="Поиск оффера"
+         aria-describedby="offer-search-status"
+         :value="offerQuery" @input="setOfferQuery($event.target.value)"
+         @input.debounce.300ms="searchOffers()">
+  <p id="offer-search-status" role="status" x-text="offerMessage"></p>
+  <template x-if="matches.length">
+    <ul class="form-suggestions" role="list" aria-label="Найденные офферы">
+      <template x-for="offer in matches" :key="offer.id">
+        <li>
+          <button class="pressable" type="button" @click="selectOffer(offer); $refs.offerQuery.focus()"
+                  x-text="formatOfferLabel(offer)"></button>
+        </li>
+      </template>
+    </ul>
+  </template>
+</div>
+<input type="hidden" name="offer_id" :value="selectedOffer?.id ?? ''">

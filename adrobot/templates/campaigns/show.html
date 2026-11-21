@@ -1,0 +1,112 @@
+{% extends "layouts/application.html" %}
+{% block content %}
+<main data-size="lg">
+  <h1 class="campaign-title">{{ title }}</h1>
+  <div class="campaign-actions" role="group" aria-label="Действия кампании">
+    <a class="pressable pressable--action" href="/campaigns">
+      <span class="pressable__content">
+        <span class="icon icon--arrow-left" aria-hidden="true"></span>
+        <span>Все кампании</span>
+      </span>
+    </a>
+    {% if editable %}
+    {% set enabled = campaign.state == "active" %}
+    <form class="switchable-form" method="post" action="/campaigns/{{ campaign.id }}/state/{{ "disable" if enabled else "enable" }}">
+      <button class="pressable switchable" type="submit" role="switch"
+              aria-label="Активность кампании" aria-checked="{{ "true" if enabled else "false" }}">
+        <span aria-hidden="true">{{ "Включена" if enabled else "Выключена" }}</span>
+      </button>
+    </form>
+    <form class="offer-draft-actions" method="post" action="/campaigns/{{ campaign.id }}/draft">
+      <button class="pressable pressable--action" type="submit" name="action" value="refetch"{% if not draft_enabled %} disabled{% endif %}>
+        Обновить офферы из Keitaro
+      </button>
+    </form>
+    <a class="pressable pressable--action pressable--destructive campaign-actions__archive"
+       href="/campaigns/{{ campaign.id }}/archive">
+      <span class="pressable__content">
+        <span class="icon icon--trash" aria-hidden="true"></span>
+        <span>Удалить кампанию</span>
+      </span>
+    </a>
+    {% endif %}
+  </div>
+  <h2 class="campaign-offers-heading" id="campaign-offers-heading">Офферы</h2>
+  {% if editable and show_form %}
+  <script defer src="/static/js/offer-picker.js"></script>
+  <script defer src="/static/js/search-suggestions.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.4/dist/cdn.min.js"></script>
+  <form class="campaign-add-offer" x-data="offerPicker()" {% if add_enabled %}method="post" action="/campaigns/{{ campaign.id }}/draft"{% else %}@submit.prevent{% endif %}
+        aria-labelledby="campaign-offers-heading">
+    {% if eligible_streams|length > 1 %}
+    <select name="stream_id" aria-label="Поток" required>
+      {% for stream in eligible_streams %}
+      <option value="{{ stream.id }}">{{ stream.name }} (#{{ stream.id }})</option>
+      {% endfor %}
+    </select>
+    {% elif eligible_streams %}
+    <input type="hidden" name="stream_id" value="{{ eligible_streams[0].id }}">
+    {% endif %}
+    {% include "offers/picker.html" %}
+    <button class="pressable pressable--action" type="submit" name="action" value="add"
+            disabled{% if add_enabled %} :disabled="!selectedOffer"{% endif %}>
+      <span class="pressable__content">
+        <span class="icon icon--plus" aria-hidden="true"></span>
+        <span>Добавить</span>
+      </span>
+    </button>
+  </form>
+  {% endif %}
+  <p class="campaign-offers-message" role="status">{{ message }}</p>
+  {% for stream in streams %}
+  <section class="campaign-stream" aria-labelledby="stream-{{ stream.id }}">
+    <h3 id="stream-{{ stream.id }}">{{ stream.name }} (#{{ stream.id }})</h3>
+    <ul class="campaign-stream__offers" role="list">
+      {% for offer in stream.offers %}
+      {% set removed = offer.state == "Removed" %}
+      {% set pending = offer.state == "Pending" %}
+      {% set pinned = offer.pinned|default(false) %}
+      {% set pin_label = "Открепить" if pinned else "Закрепить" %}
+      <li class="campaign-offer{% if pending %} campaign-offer--pending{% endif %}">
+        <strong class="campaign-offer__name">{{ offer.name|default(offer_names.get(offer.offer_id, "—")) }}</strong>
+        <span class="campaign-offer__meta">
+          <span class="campaign-offer__pill">#{{ offer.offer_id }}</span>
+          <span class="campaign-offer__pill{% if removed %} campaign-offer__pill--removed{% endif %}">{{ offer.state }}</span>
+        </span>
+        <span class="campaign-offer__pill campaign-offer__share">{{ offer.share }}%</span>
+        {% if draft_enabled and editable and stream.id in offer_stream_ids %}
+        <form class="offer-draft-actions" method="post" action="/campaigns/{{ campaign.id }}/draft">
+          <input type="hidden" name="stream_id" value="{{ stream.id }}">
+          <input type="hidden" name="offer_id" value="{{ offer.offer_id }}">
+          <button class="pressable pressable--action pressable--destructive"
+                  type="submit" name="action" value="remove"
+                  aria-label="Убрать оффер" title="Убрать оффер"{% if removed %} hidden{% endif %}>
+            <span class="icon icon--trash" aria-hidden="true"></span>
+          </button>
+          <button class="pressable pressable--action campaign-offer__restore"
+                  type="submit" name="action" value="restore"
+                  aria-label="Восстановить оффер" title="Восстановить оффер"{% if not removed or not stream.available|default(true) %} hidden{% endif %}>
+            <span class="icon icon--arrow-counter-clockwise" aria-hidden="true"></span>
+          </button>
+          <button class="pressable pressable--action{% if pinned %} campaign-offer__pin--active{% endif %}"
+                  type="submit" name="action" value="{{ "unpin" if pinned else "pin" }}"
+                  aria-label="{{ pin_label }} оффер" title="{{ pin_label }} оффер"{% if offer.state != "active" and not pending %} hidden{% endif %}>
+            <span class="icon icon--{{ 'push-pin-slash' if pinned else 'push-pin' }}"
+                  aria-hidden="true"></span>
+          </button>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+  {% if editable and draft_enabled and sync_pending %}
+  <form class="campaign-sync" method="post" action="/campaigns/{{ campaign.id }}/draft">
+    <button class="pressable pressable--action" type="submit" name="action" value="sync">
+      Синхронизировать с Keitaro
+    </button>
+  </form>
+  {% endif %}
+</main>
+{% endblock %}

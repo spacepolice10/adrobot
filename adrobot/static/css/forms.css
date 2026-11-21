@@ -1,0 +1,44 @@
+:where(form) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-v-2);
+  padding-block: var(--space-v-2);
+  padding-inline: var(--space-h);
+  background-color: var(--color-2);
+  border: var(--border-strong);
+  border-radius: var(--radius-base);
+}
+
+:where(form) > .pressable {
+  align-self: start;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-v-half);
+  min-inline-size: 0;
+}
+
+.form-field > :where(p, ul) {
+  margin-block: 0;
+}
+
+.form-field > [role="status"]:empty {
+  margin-block-start: calc(-1 * var(--space-v-half));
+}
+
+.form-field > .form-suggestions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-self: stretch;
+}
+
+.form-suggestions > li > .pressable {
+  inline-size: 100%;
+  text-align: start;
+}
+
+.form-suggestions > :nth-child(n + 2 of li) > .pressable {
+  border-block-start-width: 0;
+}

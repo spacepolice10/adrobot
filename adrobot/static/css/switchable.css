@@ -1,0 +1,32 @@
+.switchable-form {
+  justify-self: start;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.switchable {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-h-half);
+  min-block-size: var(--action-min-block-size);
+}
+
+.switchable::before {
+  content: "";
+  flex: none;
+  inline-size: 2rem;
+  block-size: 1.125rem;
+  border: var(--border-strong);
+  border-radius: var(--radius-full);
+  background:
+    radial-gradient(circle, currentColor 0.25rem, transparent 0.28rem)
+    0% center / 50% 100% no-repeat,
+    var(--color-3);
+}
+
+.switchable[aria-checked="true"]::before {
+  background-color: var(--color-positive);
+  background-position: 100% center;
+}

@@ -1,0 +1,51 @@
+.pressable {
+  --pressable-surface: var(--color-1);
+  --pressable-accent: var(--color-focus);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-h-half);
+  max-inline-size: 100%;
+  min-block-size: var(--action-min-block-size);
+  padding-block: var(--space-v-half);
+  padding-inline: var(--space-h-half);
+  overflow-wrap: anywhere;
+  color: inherit;
+  background-color: var(--pressable-surface);
+  border: var(--border-strong);
+  border-radius: var(--radius-base);
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pressable__content {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-h-half);
+  min-inline-size: 0;
+}
+
+.pressable--destructive {
+  --pressable-accent: var(--color-invert-negative);
+  --pressable-surface: color-mix(in oklch, var(--color-negative) 24%, var(--color-1));
+
+  color: var(--color-invert-negative);
+  border-color: color-mix(in oklch, var(--color-invert-negative) 65%, var(--color-negative));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pressable:where(:not(:disabled)):hover {
+    background-color: color-mix(in oklch, var(--pressable-accent) 8%, var(--pressable-surface));
+  }
+}
+
+.pressable:where(:not(:disabled)):active {
+  background-color: color-mix(in oklch, var(--pressable-accent) 18%, var(--pressable-surface));
+}
+
+.pressable:disabled {
+  color: var(--color-invert-3);
+  border: var(--border-subtle);
+  cursor: not-allowed;
+}
