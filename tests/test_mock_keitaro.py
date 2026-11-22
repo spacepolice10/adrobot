@@ -112,6 +112,34 @@ def test_app_runs_campaign_and_offer_workflow_against_mock(tmp_path, monkeypatch
                     {"offer_id": 7, "share": 50, "state": "active"},
                     {"offer_id": 8, "share": 50, "state": "active"},
                 ]
+                target = {"stream_id": stream_id, "offer_id": 7}
+                for action in ("pin", "unpin"):
+                    assert (
+                        client.post(
+                            draft, data={"action": action, **target}
+                        ).status_code
+                        == 200
+                    )
+                remote["offers"][0]["share"] = 70
+                remote["offers"][1]["share"] = 30
+                stream_url = f"{prefix}/streams/{stream_id}"
+                assert (
+                    mock.put(
+                        stream_url, headers=headers, json={"offers": remote["offers"]}
+                    ).status_code
+                    == 200
+                )
+                refreshed = client.post(draft, data={"action": "refetch"})
+                assert refreshed.status_code == 200
+                assert (
+                    ">70%</span>" in refreshed.text and ">30%</span>" in refreshed.text
+                )
+                assert 'value="sync"' not in refreshed.text
+                assert client.post(draft, data={"action": "sync"}).status_code == 200
+                assert (
+                    mock.get(stream_url, headers=headers).json()["offers"]
+                    == remote["offers"]
+                )
                 archived = client.post("/campaigns/43/archive")
                 assert archived.status_code == 200
                 assert "Mock-only campaign" not in archived.text

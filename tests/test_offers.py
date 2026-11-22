@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from adrobot.db import Base, create_database_engine
 from adrobot.keitaro import KeitaroClient, get_keitaro_client
+from adrobot.keitaro.streams import CampaignStream, StreamOffer
 from adrobot.main import create_app
 from adrobot.models.offer_draft import (
     CampaignOfferDraft,
@@ -130,6 +131,35 @@ def test_pinned_share_stays_fixed_and_other_shares_are_even():
     stream.offers[2].state = "Removed"
     stream.redistribute_shares()
     assert [offer.share for offer in stream.offers] == [40, 60, 30, 20]
+
+
+def test_refresh_respects_a_remaining_pin_and_genuine_local_share_changes():
+    def published(first_share):
+        offers = [
+            StreamOffer(offer_id=1, share=first_share, state="active"),
+            StreamOffer(offer_id=2, share=100 - first_share, state="active"),
+        ]
+        return DraftSnapshot.from_streams(
+            [CampaignStream(id=52, name="Offers", offers=offers)], {}
+        )
+
+    pinned = published(50)
+    pinned.streams[0].offers[0].pinned = True
+    pinned.reconcile(published(70))
+    assert [offer.share for offer in pinned.streams[0].offers] == [50, 50]
+    assert pinned.has_pending_changes
+
+    edited = published(50)
+    edited.streams[0].offers[0].share = 60
+    edited.streams[0].offers[1].share = 40
+    edited.reconcile(published(70))
+    assert [offer.share for offer in edited.streams[0].offers] == [60, 40]
+    assert edited.has_pending_changes
+    edited.reconcile(published(60))
+    assert not edited.has_pending_changes
+    edited.reconcile(published(80))
+    assert [offer.share for offer in edited.streams[0].offers] == [80, 20]
+    assert not edited.has_pending_changes
 
 
 @pytest.mark.parametrize("outcome", ["success", "conflict", "denied"])

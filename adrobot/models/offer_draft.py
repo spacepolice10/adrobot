@@ -53,7 +53,7 @@ class DraftStream(CampaignStream):
     flow_schema: str | None = None
     offers: list[DraftOffer] = Field(default_factory=list)
     available: bool = True
-    edited: bool = False
+    edited: bool = False  # Fallback for older drafts without a published baseline.
     published_offers: list[StreamOffer] | None = None
 
     def get_offer(self, offer_id: int) -> DraftOffer:
@@ -131,6 +131,9 @@ class DraftSnapshot(BaseModel):
         remote_streams = {stream.id: stream for stream in published.streams}
         for stream in self.streams:
             remote = remote_streams.pop(stream.id, None)
+            # Compare the draft to the previous baseline before accepting the new one.
+            keep_local_split = stream.build_replacement() is not None
+            pinned_share_changed = False
             stream.available = remote is not None
             if remote is not None:
                 stream.name = remote.name
@@ -158,15 +161,21 @@ class DraftSnapshot(BaseModel):
                 if offer.state == "Pending" and current.state != "active":
                     continue
                 offer.state = current.state
-                if not stream.edited and not offer.pinned:
-                    offer.share = current.share
+                if not keep_local_split:
+                    if not offer.pinned:
+                        offer.share = current.share
+                    elif (
+                        offer.is_selected_for_publication
+                        and offer.share != current.share
+                    ):
+                        pinned_share_changed = True
             stream.offers.extend(remote_offers.values())
             selected_ids = {
                 offer.offer_id
                 for offer in stream.offers
                 if offer.is_selected_for_publication
             }
-            if selected_ids != previous_selected_ids:
+            if selected_ids != previous_selected_ids or pinned_share_changed:
                 stream.redistribute_shares()
         self.streams.extend(remote_streams.values())
 
